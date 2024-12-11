@@ -1,0 +1,322 @@
+---
+title: "Análise do Uso de Drogas e Saúde Mental no NSDUH (2002-2014)"
+subtitle: "Relação Drogas e Saúde Mental"
+author:
+  - name: Arthur Hideio Noguti
+  - name: Fábio Augusto Oliveira de Vasconcelos
+  - name: Rafaella Toledo Aranha
+  - name: Vinicius Lucio
+           
+    affiliation: 
+      - name: Universidade Federal do Paraná
+        city: Curitiba
+        state: PR
+abstract: >
+  Este projeto foi concebido com o propósito de destacar a relevância do levantamento realizado pelo NSDUH (National Survey on Drug Use and Health), conduzido entre 2002 e 2014, que aborda a prevalência e os correlatos do uso de drogas nos Estados Unidos. Para compreender a complexidade do problema, o estudo explora aspectos como o uso de substâncias lícitas e ilícitas (álcool, tabaco, marijuana, cocaína, entre outros), comportamentos relacionados à saúde mental e ao acesso a tratamentos, além de características demográficas como idade, gênero, renda e nível educacional. A população analisada consiste em indivíduos da população civil não institucionalizada dos Estados Unidos com 12 anos ou mais, incluindo residentes de bairros de grupos não institucionais, como dormitórios universitários, casas coletivas, abrigos, pensões e civis que vivem em instalações militares.O estudo visa analisar os padrões de consumo de drogas e como esses comportamentos se relacionam com a saúde mental. Ao examinar o uso de substâncias em diferentes faixas etárias e grupos demográficos, busca-se entender melhor os fatores que influenciam  o consumo e as consequências para o bem-estar psicológico. 
+  
+date: 10/12/2024
+keywords:
+  - Análise de Dados
+  - Saúde Mental
+  - Drogas
+lang: pt
+---
+
+<style>
+p {
+  text-align: justify;  
+  text-indent: 20px;   
+}
+</style>  
+
+```{r setup, include=FALSE}
+require(tidyverse)
+require(dplyr)
+require(tidyr)
+require(data.table)
+require(ggplot2)
+
+
+```
+
+# 1 Introdução
+
+<p>O uso de drogas e a saúde mental são questões críticas que afetam profundamente a sociedade, exigindo atenção e ações efetivas.
+Este banco de dados, que abrange os anos de 2002 a 2014 nos Estados Unidos, fornece informações valiosas sobre a prevalência do uso de substâncias lícitas
+e ilícitas, bem como sobre comportamentos relacionados à saúde mental. Os dados foram coletados exclusivamente da população civil não institucionalizada 
+dos Estados Unidos, composta por indivíduos com 12 anos ou mais, incluindo residentes de bairros de grupos não institucionais, como dormitórios 
+universitários, casas coletivas, abrigos, pensões e civis que vivem em instalações militares.
+
+# 2 Métodos Utilizado
+
+## 2.1 Fonte de Dados {#sec-2.1}
+
+<p>Os dados utilizados foram disponibilizados por um usuário na plataforma Kaggle, com o link para acesso incluído na bibliografia. 
+Segundo o autor, esses dados têm origem no NSDUH (National Survey on Drug Use and Health), um levantamento realizado pela Substance Abuse and Mental
+Health Services Administration (SAMHSA). A pesquisa utilizou uma amostra probabilística representativa da população civil não institucionalizada dos 
+Estados Unidos, garantindo a abrangência e a confiabilidade das informações coletadas.
+
+## 2.2 Pré-processamento {#sec-2.2}
+
+<p>O pré-processamento dos dados incluiu a verificação da unicidade da chave primária (identificação de cada pessoa) em relação a cada ano, 
+o ajuste dos pesos amostrais (ANALWC) para possibilitar análises abrangendo múltiplos anos e a verificação da comparabilidade entre variáveis. 
+Este último passo envolveu, por exemplo, a recodificação de categorias para garantir consistência entre anos específicos. Além disso, foi realizada a
+conversão de variáveis originalmente numéricas em categorias descritivas, substituindo valores numéricos por seus respectivos nomes,
+com o objetivo de facilitar a compreensão e a análise dos dados.
+
+```{r}
+#| echo: false
+#Pré-processsamento
+
+library(tidyverse)
+load("C:/Users/arthu/OneDrive/Área de Trabalho/Elementos de prog para estatística/Trabalho final/Shiny/app/dados.RData")
+
+
+```
+
+## 2.3 Métodos Estátisticos {#sec-2.3}
+
+<p>As técnicas estatísticas aplicadas incluem a realização de análises descritivas para identificar padrões gerais, além da utilização de gráficos e tabelas
+para visualizar a distribuição e a evolução do uso de substâncias ao longo do tempo. Também foram feitas comparações entre diferentes subgrupos
+populacionais, como faixas etárias e gênero. Quando necessário, foram empregadas modelagens estatísticas para investigar fatores associados ao uso de 
+drogas.
+
+# 3 Resultados {#sec-3.0}
+
+## 3.1 Idade de Início de Fumar {#sec-3.1}
+
+<p>Na análise da idade de início de fumar, observamos padrões importantes de uso precoce tanto do tabaco quanto da maconha entre os participantes do estudo. 
+Abaixo estão os histogramas que ilustram a distribuição das idades de início para cada uma dessas substâncias.
+
+### 3.1.1 Histograma - Tabaco {#sec-3.1.1}
+
+<p>Como pode ser visto pela @fig-01, a análise dos dados revelou que a faixa etária de início de fumar tabaco está majoritariamente concentrada entre os 12 e 17 anos, marcando a adolescência 
+como o período mais comum para o início do consumo. Além disso, há uma quantidade significativa de casos registrados de início antes dos 10 anos de idade, 
+evidenciando que o consumo precoce não é raro entre as crianças.
+
+```{r, fig-01, fig.cap = "Idade ao fumar o primeiro cigarro de Tabaco"}
+#| echo: false
+library(tidyverse)
+
+base_graficos <- base 
+
+base_graficos %>% 
+  filter(cigtry <= 68) %>% 
+  ggplot(aes(x = cigtry)) +
+  geom_histogram(fill = "blue", bins = 25)+
+  labs(
+    x = "Idade ao fumar o primeiro cigarro de Tabaco",
+    y = "Frequência"
+  )+
+  scale_x_continuous(n.breaks = 15)+
+  theme_classic()
+
+
+```
+
+### 3.1.2 Histograma Maconha {#sec-3.1.2}
+
+<p>No caso da maconha, fica evidente na @fig-02, os dados mostram que a faixa etária de início está concentrada, predominantemente, entre os 15 e 18 anos, 
+indicando que o início do consumo costuma ocorrer em uma fase posterior à do tabaco, ainda dentro do período da adolescência.
+
+```{r, fig-02, fig.cap = "Idade ao fumar o primeiro cigarro de Maconha"}
+#| echo: false
+base_graficos %>% 
+  filter(mjage <= 68) %>% 
+  ggplot(aes(x = mjage)) +
+  geom_histogram(fill = "blue", bins = 25)+
+  labs(
+    x = "Idade ao fumar o primeiro cigarro de Maconha",
+    y = "Frequência"
+  )+
+  scale_x_continuous(n.breaks = 15)+
+  theme_classic()
+```
+
+## 3.2 Frequência de Sentir-se Sem Esperança nos Últimos 30 Dias {#sec-3.2}
+
+<p>A análise da frequência com que os participantes relataram sentir-se sem esperança nos últimos 30 dias mostrou que a grande maioria dos respondentes indicou a categoria "Nenhuma vez", sendo mostrado na @fig-03, sugerindo que esse sentimento não é amplamente prevalente entre os participantes do estudo
+
+```{r, fig-03, fig.cap = "Qual Frequência Se Sentiu Sem Esperança (Nos Últimos 30 Dias)"}
+#| warning: false
+#| echo: false
+ base %>% 
+      filter(DSTHOP30 %in% c(1:5) & 
+               cigever == 1) %>% 
+      mutate(DSTHOP30 = recode(DSTHOP30,
+                               "1" = "O tempo inteiro",
+                               "2" = "Maioria do tempo",
+                               "3" = "Algumas vezes",
+                               "4" = "Poucas vezes",
+                               "5" = "Nenhuma vez")) %>% 
+      ggplot(aes(x = DSTHOP30)) + 
+      geom_bar(fill = "blue")+
+      coord_flip()+
+      labs( y = "Frequência",
+            x = NULL)+
+      theme_classic()+
+      theme(
+        axis.line.y = element_blank(),
+        axis.title.x = element_text(size = 14, face = "bold"),  # Aumenta o tamanho da legenda do eixo X
+        axis.title.y = element_text(size = 12, face = "bold"),  # Aumenta o tamanho da legenda do eixo Y
+        axis.text.x = element_text(size = 12),  # Aumenta o tamanho do texto no eixo X
+        axis.text.y = element_text(size = 12),  # Aumenta o tamanho do texto no eixo Y
+        legend.title = element_text(size = 14, face = "bold"),  # Aumenta o título da legenda
+        legend.text = element_text(size = 12),  # Aumenta o tamanho do texto da legenda
+        legend.key = element_rect(size = 2),  # Aumenta o tamanho da chave da legenda
+        plot.title = element_text(size = 16, face = "bold", hjust = 0.5)  # Título do gráfico em negrito e centralizado
+      )
+
+```
+
+## 3.3 Época que começa a fumar {#sec-3.3}
+
+<p>Nos Estados Unidos, o uso de cigarros geralmente começa em julho devido às férias de verão, quando os jovens têm mais tempo livre e menos supervisão, na @fig-04 fica nítido essa observação.
+Essa combinação de fatores aumenta a exposição a ambientes sociais onde o fumo é incentivado. A grande maioria dos novos fumantes está na faixa etária
+da adolescência, um período marcado pela busca por aceitação social e experimentação.
+
+```{r, fig-04, fig.cap = "Faixa Etária e Época em que se Começa a Fumar"}
+#| echo: false
+#| warning: false
+#| message: false
+base %>% 
+      filter(cigmfu <= 12) %>% 
+      mutate(cigmfu = recode(cigmfu,
+                             "1" = "Jan",
+                             "2" = "Fev",
+                             "3" = "Mar",
+                             "4" = "Abr",
+                             "5" = "Mai",
+                             "6" = "Jun",
+                             "7" = "Jul",
+                             "8" = "Ago",
+                             "9" = "Set",
+                             "10" = "Out",
+                             "11" = "Nov",
+                             "12" = "Dez")) %>% 
+      mutate(cigtry = recode(cigtry,
+                             `1` = "1-7",
+                             `2` = "1-7",
+                             `3` = "1-7",
+                             `4` = "1-7",
+                             `5` = "1-7",
+                             `6` = "1-7",
+                             `7` = "1-7",
+                             `8` = "8-15",
+                             `9` = "8-15",
+                             `10` = "8-15",
+                             `11` = "8-15",
+                             `12` = "8-15",
+                             `13` = "8-15",
+                             `14` = "8-15",
+                             `15` = "8-15",
+                             `16` = "16-23",
+                             `17` = "16-23",
+                             `18` = "16-23",
+                             `19` = "16-23",
+                             `20` = "16-23",
+                             `21` = "16-23",
+                             `22` = "16-23",
+                             `23` = "16-23",
+                             `24` = "23 ou +",
+                             `25` = "23 ou +",
+                             `26` = "23 ou +",
+                             `27` = "23 ou +",
+                             `28` = "23 ou +",
+                             `29` = "23 ou +",
+                             `30` = "23 ou +",
+                             `31` = "23 ou +",
+                             `32` = "23 ou +",
+                             `33` = "23 ou +",
+                             `34` = "23 ou +",
+                             `35` = "23 ou +",
+                             `36` = "23 ou +",
+                             `37` = "23 ou +",
+                             `38` = "23 ou +",
+                             `39` = "23 ou +",
+                             `40` = "23 ou +",
+                             `41` = "23 ou +",
+                             `42` = "23 ou +",
+                             `43` = "23 ou +",
+                             `44` = "23 ou +",
+                             `45` = "23 ou +",
+                             `46` = "23 ou +",
+                             `47` = "23 ou +",
+                             `48` = "23 ou +",
+                             `49` = "23 ou +",
+                             `50` = "23 ou +",
+                             `51` = "23 ou +",
+                             `52` = "23 ou +",
+                             `53` = "23 ou +",
+                             `54` = "23 ou +",
+                             `55` = "23 ou +",
+                             `56` = "23 ou +",
+                             `57` = "23 ou +",
+                             `58` = "23 ou +",
+                             `59` = "23 ou +",
+                             `60` = "23 ou +",
+                             `61` = "23 ou +",
+                             `62` = "23 ou +",
+                             `63` = "23 ou +",
+                             `64` = "23 ou +",
+                             `65` = "23 ou +",
+                             `66` = "23 ou +",
+                             `67` = "23 ou +",
+                             `68` = "23 ou +",
+                             `69` = "23 ou +",
+                             `70` = "23 ou +")) %>%  
+      mutate(cigtry = factor(cigtry, levels = c("1-7", "8-15", "16-23", "23 ou +"))) %>% 
+      mutate(cigmfu = factor(cigmfu, levels = c("Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"))) %>% 
+      group_by(cigmfu, cigtry) %>% 
+      summarise(total = n()) %>% 
+      ggplot(aes(x = cigmfu, y = cigtry , fill = total))+
+      geom_tile()+
+      labs(x = NULL, y = NULL)+
+      scale_fill_gradient(low = "lightblue", high = "darkblue") +
+      theme_classic()+
+      theme(
+        axis.line.y = element_blank(),
+        axis.title.x = element_text(size = 14, face = "bold"),  # Aumenta o tamanho da legenda do eixo X
+        axis.title.y = element_text(size = 12, face = "bold"),  # Aumenta o tamanho da legenda do eixo Y
+        axis.text.x = element_text(size = 12),  # Aumenta o tamanho do texto no eixo X
+        axis.text.y = element_text(size = 12),  # Aumenta o tamanho do texto no eixo Y
+        legend.title = element_text(size = 14, face = "bold"),  # Aumenta o título da legenda
+        legend.text = element_text(size = 12),  # Aumenta o tamanho do texto da legenda
+        legend.key = element_rect(size = 2),  # Aumenta o tamanho da chave da legenda
+        plot.title = element_text(size = 16, face = "bold", hjust = 0.5)  # Título do gráfico em negrito e centralizado
+      )
+
+```
+
+# 4 Concluções e Planos Futuros
+
+## 4.1 Limitações do Estudo
+
+<p>Uma das principais limitações deste estudo foi o tamanho da base de dados utilizada, que totaliza cerca de 10 GB. Devido à sua grande dimensão, 
+foi necessário realizar uma seleção criteriosa das variáveis mais relevantes para viabilizar a análise e garantir um processamento eficiente. 
+Esse procedimento, embora necessário, pode ter excluído informações valiosas que poderiam enriquecer as interpretações. A exclusão de variáveis
+secundárias relacionadas a fatores sociais, econômicos ou regionais pode limitar a compreensão mais ampla dos padrões de uso de drogas e das 
+condições de saúde mental. Consequentemente, algumas associações e tendências importantes podem não ter sido detectadas, restringindo o alcance das 
+conclusões e sugerindo a necessidade de estudos futuros mais abrangentes.
+
+## 4.2 Um Futuro Melhor
+
+<p>Para alcançar um futuro mais saudável, é fundamental focar no consumo de drogas durante a adolescência, período em que o primeiro contato com 
+substâncias ocorre na maioria dos casos. O estudo realizado revelou que a adolescência é uma fase crítica, na qual muitos jovens iniciam o uso de drogas,
+o que pode levar a sérios impactos na saúde mental e física ao longo da vida.
+
+## 4.3 Conclusão
+
+<p>O estudo realizado mostra que a adolescência é um período crítico para o início do consumo de substâncias, 
+como observado nas análises sobre a idade de início do uso de tabaco e maconha na [Seção 3.1](#sec-3.1). 
+A maior parte dos novos fumantes começa a usar substâncias na faixa etária entre 12 e 18 anos, conforme indicado pelos histogramas apresentados na
+[Seção 3.1.1](#sec-3.1.1) e [Seção 3.1.2](#sec-3.1.2). Além disso, a análise da [Seção 3.3](#sec-3.3) aponta que as férias de verão, especialmente 
+em julho, são um período chave para o início do consumo de cigarros, devido ao aumento do tempo livre e à menor supervisão parental.
+
+<p>A intervenção precoce, por meio de políticas públicas e programas educativos, pode desempenhar um papel crucial na prevenção do uso de substâncias. 
+Ao fornecer informações e apoio adequados durante a adolescência, é possível reduzir o risco de dependência e promover um futuro mais saudável para 
+as próximas gerações.
+
+# 5 Bibliografia
+
+Fonte dos Dados: [Kaggle](https://www.kaggle.com/datasets/bgallamoza/national-survey-of-drug-use-and-health-20152019?resource=download)
