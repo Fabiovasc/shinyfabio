@@ -1,0 +1,243 @@
+library(shiny)
+library(ggplot2)
+library(dplyr)
+library(bslib)
+
+ui <- page_sidebar(
+  theme = bs_theme(version = 5),
+  title = "Análise do Uso de Crack",
+  
+  sidebar = sidebar(
+    title = "Controles",
+    
+    selectInput("variable", "Selecione a variável para análise",
+                choices = c("Idade ao Primeiro Uso" = "crkage",
+                            "Já Usou Crack" = "crkever",
+                            "Último Uso" = "crakrec",
+                            "Ano do Primeiro Uso" = "crkyfu")),
+    
+    actionButton("btn2", "Mostrar Data Table"),
+    selectInput("age_group", "Selecione o Grupo Etário",
+                choices = c("0-18", "19-30", "31-40", "41-50", "51+", "Faixa Etária Completa")),
+    
+    actionButton("btn1", "Reiniciar")
+  ),
+  
+  layout_columns(
+    card(
+      full_screen = TRUE,
+      card_header("Visualização Principal"),
+      plotOutput("mainPlot")
+    ),
+    card(
+      full_screen = TRUE,
+      card_header("Estatísticas"),
+      textOutput("stats"),
+      tableOutput("tableOutput")
+    )
+  )
+)
+
+server <- function(input, output, session) {
+  
+  filtered_data <- reactive({
+    if (!input$variable %in% c("crkage")) {
+      return(reduzida)  # Retorna todos os dados para análises que não envolvem idade
+    }
+    
+    if (input$age_group == "Faixa Etária Completa") {
+      return(reduzida %>% filter(crkage < 991, crkage != 985))
+    }
+    
+    age_range <- switch(input$age_group,
+                        "0-18" = c(0, 18),
+                        "19-30" = c(19, 30),
+                        "31-40" = c(31, 40),
+                        "41-50" = c(41, 50),
+                        "51+" = c(51, 100))
+    
+    reduzida %>% filter(crkage >= age_range[1] & 
+                          crkage <= age_range[2] & 
+                          crkage < 991 & 
+                          crkage != 985)
+  })
+  
+  observeEvent(input$btn1, {
+    # Reiniciar os inputs
+    updateSelectInput(session, "variable", selected = "crkage")
+    updateSelectInput(session, "age_group", selected = "Faixa Etária Completa")
+  })
+  
+  observeEvent(input$btn2, {
+    output$tableOutput <- renderTable({
+      data <- filtered_data()
+      
+      if (input$variable == "crkyrtot") {
+        valid_data <- data$crkyrtot[data$crkyrtot < 900]
+        data.frame(
+          Estatística = c("Média", "Mediana", "Mín", "Máx"),
+          Valor = c(
+            round(mean(valid_data, na.rm = TRUE), 1),
+            median(valid_data, na.rm = TRUE),
+            min(valid_data, na.rm = TRUE),
+            max(valid_data, na.rm = TRUE)
+          )
+        )
+      } else if (input$variable %in% c("crkyfu", "crkmfu")) {
+        data.frame(
+          Estatística = c("Respostas Válidas"),
+          Valor = c(sum(data[[input$variable]] < 9000, na.rm = TRUE))
+        )
+      } else {
+        valid_ages <- data$crkage[data$crkage < 991 & data$crkage != 985]
+        data.frame(
+          Estatística = c("Média", "Mediana", "Mín", "Máx"),
+          Valor = c(
+            round(mean(valid_ages, na.rm = TRUE), 1),
+            median(valid_ages, na.rm = TRUE),
+            min(valid_ages, na.rm = TRUE),
+            max(valid_ages, na.rm = TRUE)
+          )
+        )
+      }
+    })
+  })
+  
+  # Funções para mapear variáveis categóricas
+  map_crkever <- function(x) {
+    case_when(
+      x == 1 ~ "Sim",
+      x == 2 ~ "Não",
+      x == 81 ~ "Nunca Usou Cocaína",
+      x == 91 ~ "Nunca Usou Cocaína",
+      x == 85 ~ "Dado Ruim",
+      x == 94 ~ "Não Sabe",
+      x == 97 ~ "Recusou",
+      x == 98 ~ "Sem Resposta",
+      TRUE ~ "Outro"
+    )
+  }
+  
+  map_crakrec <- function(x) {
+    case_when(
+      x == 1 ~ "Nos últimos 30 dias",
+      x == 2 ~ "De 30 dias a 12 meses",
+      x == 3 ~ "Há mais de 12 meses",
+      x == 8 ~ "Usou nos últimos 12 meses",
+      x == 9 ~ "Usou na vida",
+      x == 11 ~ "Usou nos últimos 30 dias",
+      x == 81 ~ "Nunca usou crack",
+      x == 85 ~ "Dado ruim",
+      x == 91 ~ "Nunca usou crack",
+      x == 97 ~ "Recusou",
+      x == 98 ~ "Sem resposta",
+      TRUE ~ "Outro"
+    )
+  }
+  
+  map_crkmfu <- function(x) {
+    case_when(
+      x >= 1 & x <= 12 ~ month.name[x],
+      x == 81 ~ "Nunca usou crack",
+      x == 85 ~ "Dado ruim",
+      x == 89 ~ "Pular legitimamente",
+      x == 91 ~ "Nunca usou crack",
+      x == 94 ~ "Não sabe",
+      x == 97 ~ "Recusou",
+      x == 98 ~ "Sem resposta",
+      x == 99 ~ "Pular legitimamente",
+      TRUE ~ "Outro"
+    )
+  }
+  
+  output$mainPlot <- renderPlot({
+    data <- filtered_data()
+    
+    title <- switch(input$variable,
+                    "crkage" = "Idade ao Primeiro Uso",
+                    "crkever" = "Já Usou Crack",
+                    "crakrec" = "Último Uso",
+                    "crkyrtot" = "Dias Usados nos Últimos 12 Meses",
+                    "crkyfu" = "Ano do Primeiro Uso")
+    
+    if (input$variable == "crkever") {
+      data %>%
+        mutate(label = map_crkever(crkever)) %>%
+        ggplot(aes(x = label)) +
+        geom_bar(fill = "blue") +
+        theme_minimal() +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+        labs(title = title, x = "Resposta", y = "Contagem")
+    } else if (input$variable == "crakrec") {
+      data %>%
+        mutate(label = map_crakrec(crakrec)) %>%
+        ggplot(aes(x = label)) +
+        geom_bar(fill = "blue") +
+        theme_minimal() +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+        labs(title = title, x = "Período", y = "Contagem")
+    } else if (input$variable == "crkmfu") {
+      data %>%
+        mutate(label = map_crkmfu(crkmfu)) %>%
+        ggplot(aes(x = label)) +
+        geom_bar(fill = "blue") +
+        theme_minimal() +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+        labs(title = title, x = "Mês", y = "Contagem")
+    } else if (input$variable == "crkyfu") {
+      data %>%
+        filter(crkyfu < 9000) %>%
+        ggplot(aes(x = crkyfu)) +
+        geom_histogram(binwidth = 1, fill = "blue") +
+        theme_minimal() +
+        labs(title = title, x = "Ano", y = "Contagem")
+    } else {
+      data %>%
+        ggplot(aes_string(x = input$variable)) +
+        geom_histogram(binwidth = 1, fill = "blue") +
+        theme_minimal() +
+        labs(title = title, x = "Idade", y = "Contagem")
+    }
+  })
+  
+  output$stats <- renderText({
+    data <- filtered_data()
+    
+    if (input$variable == "crkever") {
+      yes_count <- sum(data$crkever == 1, na.rm = TRUE)
+      no_count <- sum(data$crkever == 2, na.rm = TRUE)
+      never_count <- sum(data$crkever %in% c(81, 91), na.rm = TRUE)
+      total <- nrow(data)
+      
+      sprintf("Total de respostas: %d\nSim: %d (%.1f%%)\nNão: %d (%.1f%%)\nNunca usou cocaína: %d (%.1f%%)",
+              total, yes_count, 100*yes_count/total, no_count, 100*no_count/total,
+              never_count, 100*never_count/total)
+    } else if (input$variable == "crakrec") {
+      recent <- sum(data$crakrec == 1, na.rm = TRUE)
+      past_year <- sum(data$crakrec == 2, na.rm = TRUE)
+      past <- sum(data$crakrec == 3, na.rm = TRUE)
+      total <- sum(!is.na(data$crakrec))
+      
+      sprintf("Total de respostas: %d\nÚltimos 30 dias: %d (%.1f%%)\nÚltimo ano: %d (%.1f%%)\nHá mais de 1 ano: %d (%.1f%%)",
+              total, recent, 100*recent/total, past_year, 100*past_year/total,
+              past, 100*past/total)
+    } else if (input$variable == "crkyrtot") {
+      valid_data <- data$crkyrtot[data$crkyrtot < 900]
+      sprintf("Total de respostas válidas: %d\nMédia de dias: %.1f\nMediana de dias: %d\nFaixa: %d a %d",
+              length(valid_data), mean(valid_data, na.rm = TRUE),
+              median(valid_data, na.rm = TRUE),
+              min(valid_data, na.rm = TRUE), max(valid_data, na.rm = TRUE))
+    } else if (input$variable %in% c("crkyfu", "crkmfu")) {
+      n_valid <- sum(data[[input$variable]] < 9000)
+      sprintf("Número de respostas válidas: %d", n_valid)
+    } else {
+      valid_ages <- data$crkage[data$crkage < 991 & data$crkage != 985]
+      sprintf("Respostas válidas: %d\nMédia de idade: %.1f\nMediana de idade: %d\nFaixa: %d a %d",
+              length(valid_ages), mean(valid_ages, na.rm = TRUE),
+              median(valid_ages, na.rm = TRUE),
+              min(valid_ages, na.rm = TRUE), max(valid_ages, na.rm = TRUE))
+    }
+  })
+}
+
+shinyApp(ui, server)
